@@ -11,7 +11,7 @@ namespace Bibliotekssystem
     {
  
         public string MemberId { get; }
-        public string Name { get; set; }
+        public string Name { get; set; } 
         public string Email { get; set; }
         public DateTime MemberSince { get; set; }
         private List<Book> _borrowedBooks = new();
