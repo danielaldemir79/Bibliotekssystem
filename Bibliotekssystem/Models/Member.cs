@@ -23,22 +23,8 @@
             return $"Member ID: {MemberId}, Name: {Name}, Email: {Email}, Member Since: {MemberSince.ToShortDateString()}, Borrowed Books Count: {BorrowedBooks.Count}";
         }
 
-        public void BorrowBook(Book book)
-        {
-            if (book.IsAvailable)
-            {
-                _borrowedBooks.Add(book);
-                book.IsAvailable = false;
-            }
-        }
-
-        public void ReturnBook(Book book)
-        {
-            bool wasRemoved = _borrowedBooks.Remove(book);
-            if (wasRemoved)
-            {
-                book.IsAvailable = true;
-            }
-        }
+        // Interna metoder som bara LoanManager använder
+        internal void AddBorrowedBook(Book book) => _borrowedBooks.Add(book);
+        internal void RemoveBorrowedBook(Book book) => _borrowedBooks.Remove(book);
     }
 }

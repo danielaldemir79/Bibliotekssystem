@@ -14,7 +14,9 @@ namespace Bibliotekssystem.Services
 
             var loan = new Loan(book, member, DateTime.Now, DateTime.Now.AddDays(loanDays));
             _loans.Add(loan);
-            member.BorrowBook(book);
+
+            book.IsAvailable = false;
+            member.AddBorrowedBook(book);
 
             return loan;
         }
@@ -25,7 +27,8 @@ namespace Bibliotekssystem.Services
                 return false;
 
             loan.ReturnBook();
-            loan.Member.ReturnBook(loan.Book);
+            loan.Book.IsAvailable = true;
+            loan.Member.RemoveBorrowedBook(loan.Book);
 
             return true;
         }
