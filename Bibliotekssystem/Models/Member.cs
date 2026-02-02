@@ -1,6 +1,6 @@
 ﻿namespace Bibliotekssystem.Models
 {
-    public class Member
+    public class Member : Interfaces.ISearchable
     {
  
         public string MemberId { get; }
@@ -20,11 +20,25 @@
 
         public string GetInfo()
         {
+            // Returnerar en sträng med all information om medlemmen
             return $"Member ID: {MemberId}, Name: {Name}, Email: {Email}, Member Since: {MemberSince.ToShortDateString()}, Borrowed Books Count: {BorrowedBooks.Count}";
         }
 
         // Interna metoder som bara LoanManager använder
         internal void AddBorrowedBook(Book book) => _borrowedBooks.Add(book);
         internal void RemoveBorrowedBook(Book book) => _borrowedBooks.Remove(book);
+
+        public bool Matches(string searchTerm)
+        {
+            // Gör sökordet till gemener för att möjliggöra case-insensitive sökning
+            searchTerm = searchTerm.ToLower();
+            
+            // Kontrollera om sökordet matchar någon av medlemmens egenskaper
+            //Returnerar true om någon egenskap matchar sökordet
+            return MemberId.ToLower().Contains(searchTerm) ||
+                   Name.ToLower().Contains(searchTerm) ||
+                   Email.ToLower().Contains(searchTerm) ||
+                   MemberSince.ToString("d").Contains(searchTerm);
+        }
     }
 }
