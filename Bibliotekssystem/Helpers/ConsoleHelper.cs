@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Bibliotekssystem
+﻿namespace Bibliotekssystem.Helpers
 {
     public static class ConsoleHelper
     {
@@ -19,7 +13,7 @@ namespace Bibliotekssystem
         public static void WriteRed(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write(message);
+            Console.WriteLine(message);
             Console.ResetColor();
         }
 

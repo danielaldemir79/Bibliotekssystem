@@ -34,7 +34,7 @@ namespace Bibliotekssystem.Services
         }
 
         // Metod för att söka böcker baserat på ett sökord
-        //returnerar en lista med böcker som matchar sökordet
+        //returnerar en lista med böcker som matchar sökordet när Matches-metoden i Book-klassen blir true 
         public List<Book> SearchBooks(string searchTerm)
         {
             return _books.Where(b => b.Matches(searchTerm)).ToList();

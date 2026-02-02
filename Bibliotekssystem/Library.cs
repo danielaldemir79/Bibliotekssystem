@@ -1,9 +1,5 @@
 ﻿using Bibliotekssystem.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Bibliotekssystem.Helpers;
 
 namespace Bibliotekssystem
 {
@@ -28,12 +24,23 @@ namespace Bibliotekssystem
         // Metod för att visa statistik om biblioteket
         public void DisplayStatistics()
         {
-            Console.WriteLine("=== Biblioteksstatistik ===");
+            ConsoleHelper.WriteGreen("=== Biblioteksstatistik ===");
             Console.WriteLine($"Antal böcker: {BookCatalog.Books.Count}");
             Console.WriteLine($"Tillgängliga böcker: {BookCatalog.GetAvailableBooks().Count}");
             Console.WriteLine($"Antal medlemmar: {MemberRegistry.Members.Count}");
             Console.WriteLine($"Aktiva lån: {LoanManager.GetActiveLoans().Count}");
             Console.WriteLine($"Försenade lån: {LoanManager.GetOverdueLoans().Count}");
+
+            // Mest aktiva låntagaren
+            var mostActive = LoanManager.GetMostActiveBorrower();
+            if (mostActive != null)
+            {
+                Console.WriteLine($"Mest aktiva låntagare: {mostActive.Name}");
+            }
+            else
+            {
+                Console.WriteLine("Mest aktiva låntagare: Inga lån registrerade");
+            }
         }
     }
 }

@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Bibliotekssystem
+namespace Bibliotekssystem.Helpers
 {
-    public class InputHelper
+    public static class InputHelper
     {
         //Metoder för att hantera olika typer av inmatningar från användaren
-        public int GetInt()
+        public static int GetInt()
         {
             while (true)
             {
@@ -24,7 +24,7 @@ namespace Bibliotekssystem
             }
         }
 
-        public string GetString()
+        public static string GetString()
         {
             while (true)
             {
@@ -39,7 +39,7 @@ namespace Bibliotekssystem
             }
         }
 
-        public DateTime GetDateTime()
+        public static DateTime GetDateTime()
         {
             while (true)
             {
