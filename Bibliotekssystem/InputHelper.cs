@@ -20,7 +20,7 @@ namespace Bibliotekssystem
                     return result;
                 }
 
-                Console.WriteLine("Ogiltig inmatning. Vänligen ange ett heltal.");
+                ConsoleHelper.WriteRed("Ogiltig inmatning. Vänligen ange ett heltal.");
             }
         }
 
@@ -35,7 +35,7 @@ namespace Bibliotekssystem
                     return input;
                 }
 
-                Console.WriteLine("Ogiltig inmatning. Vänligen ange en giltig text.");
+                ConsoleHelper.WriteRed("Ogiltig inmatning. Vänligen ange en giltig text.");
             }
         }
 
@@ -50,7 +50,7 @@ namespace Bibliotekssystem
                     return result;
                 }
 
-                Console.WriteLine("Ogiltig inmatning. Vänligen ange ett giltigt datum (t.ex. 2024-12-31).");
+                ConsoleHelper.WriteRed("Ogiltig inmatning. Vänligen ange ett giltigt datum (t.ex. 2024-12-31).");
             }
         }
 

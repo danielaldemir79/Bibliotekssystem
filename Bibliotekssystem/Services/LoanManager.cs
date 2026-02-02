@@ -22,7 +22,7 @@ namespace Bibliotekssystem.Services
 
             book.IsAvailable = false;
             member.AddBorrowedBook(book);
-            
+
             // Returnera det skapade lånet
             return loan;
         }
@@ -72,7 +72,7 @@ namespace Bibliotekssystem.Services
         // Returnerar medlemmen med flest lån (mest aktiva låntagaren)
         public Member? GetMostActiveBorrower()
         {
-           
+
             return _loans
                 .Where(l => !l.IsReturned)           // 1. Ta bara aktiva lån
                 .GroupBy(l => l.Member)              // 2. Gruppera efter medlem
@@ -80,4 +80,5 @@ namespace Bibliotekssystem.Services
                 .Select(g => g.Key)                  // 4. Plocka ut medlemmen
                 .FirstOrDefault();                   // 5. Ta första (den med flest)
         }
+    }
 }

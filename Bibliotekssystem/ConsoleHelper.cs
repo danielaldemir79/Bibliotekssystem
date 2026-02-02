@@ -19,7 +19,7 @@ namespace Bibliotekssystem
         public static void WriteRed(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(message);
+            Console.Write(message);
             Console.ResetColor();
         }
 
