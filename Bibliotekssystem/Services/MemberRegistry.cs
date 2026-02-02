@@ -38,5 +38,11 @@ namespace Bibliotekssystem.Services
             // Returnerar alla medlemmar i registret
             return _members.ToList();
         }
+
+        public List<Member> SearchMembers(string searchTerm)
+        {
+            // Returnerar en lista med medlemmar som matchar sökordet
+            return _members.Where(m => m.Matches(searchTerm)).ToList();
+        }
     }
 }

@@ -8,6 +8,7 @@ namespace Bibliotekssystem
 {
     public class InputHelper
     {
+        //Metoder för att hantera olika typer av inmatningar från användaren
         public int GetInt()
         {
             while (true)

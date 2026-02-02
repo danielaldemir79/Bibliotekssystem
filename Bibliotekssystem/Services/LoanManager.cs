@@ -62,5 +62,22 @@ namespace Bibliotekssystem.Services
             // Returnerar alla lån för en specifik medlem
             return _loans.Where(l => l.Member == member).ToList();
         }
-    }
+
+        public List<Loan> SearchLoans(string searchTerm)
+        {
+            // Returnerar alla lån som matchar sökordet
+            return _loans.Where(l => l.Matches(searchTerm)).ToList();
+        }
+
+        // Returnerar medlemmen med flest lån (mest aktiva låntagaren)
+        public Member? GetMostActiveBorrower()
+        {
+           
+            return _loans
+                .Where(l => !l.IsReturned)           // 1. Ta bara aktiva lån
+                .GroupBy(l => l.Member)              // 2. Gruppera efter medlem
+                .OrderByDescending(g => g.Count())   // 3. Sortera med flest lån först
+                .Select(g => g.Key)                  // 4. Plocka ut medlemmen
+                .FirstOrDefault();                   // 5. Ta första (den med flest)
+        }
 }

@@ -27,16 +27,37 @@ namespace Bibliotekssystem.Services
             return _books.FirstOrDefault(b => b.ISBN == isbn);
         }
 
-        // Metod för att hitta böcker baserat på titel
-        public List<Book> FindByAuthor(string author)
-        {
-            return _books.Where(b => b.Author.Contains(author, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
         // Metod för att hämta alla tillgängliga böcker i katalogen
         public List<Book> GetAvailableBooks()
         {
             return _books.Where(b => b.IsAvailable).ToList();
         }
+
+        // Metod för att söka böcker baserat på ett sökord
+        //returnerar en lista med böcker som matchar sökordet
+        public List<Book> SearchBooks(string searchTerm)
+        {
+            return _books.Where(b => b.Matches(searchTerm)).ToList();
+        }
+
+
+        // Metoder för att sortera böcker baserat på olika kriterier
+        
+        // Returnerar böcker sorterade alfabetiskt efter titel
+        public List<Book> GetBooksSortedByTitle()
+        {
+            return _books.OrderBy(b => b.Title).ToList();
+        }
+        // Returnerar böcker sorterade alfabetiskt efter författare
+        public List<Book> GetBooksSortedByAuthor()
+        {
+            return _books.OrderBy(b => b.Author).ToList();
+        }
+        // Returnerar böcker sorterade efter utgivningsår (äldst först)
+        public List<Book> GetBooksSortedByPublishedYear()
+        {
+            return _books.OrderBy(b => b.PublishedYear).ToList();
+        }
+
     }
 }

@@ -8,6 +8,7 @@ namespace Bibliotekssystem
 {
     public static class ConsoleHelper
     {
+        //Metoder för att skriva färgad text i konsolen
         public static void WriteGreen(string message)
         {
             Console.ForegroundColor = ConsoleColor.Green;

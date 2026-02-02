@@ -9,8 +9,13 @@ namespace Bibliotekssystem
 {
     public class Library
     {
+        // Huvudklassen för bibliotekssystemet som hanterar bokkatalogen.
+
+        //BookCatalog för att hantera böcker
         public BookCatalog BookCatalog { get; }
+        // MemberRegistry för att hantera medlemmar
         public MemberRegistry MemberRegistry { get; }
+        // LoanManager för att hantera lån av böcker
         public LoanManager LoanManager { get; }
 
         public Library()
@@ -20,6 +25,7 @@ namespace Bibliotekssystem
             LoanManager = new LoanManager();
         }
 
+        // Metod för att visa statistik om biblioteket
         public void DisplayStatistics()
         {
             Console.WriteLine("=== Biblioteksstatistik ===");
