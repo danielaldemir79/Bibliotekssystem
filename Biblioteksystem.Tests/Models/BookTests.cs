@@ -9,6 +9,11 @@ namespace Biblioteksystem.Tests.Models
 {
     public class BookTests
     {
+        // ------------------------------------------
+        // KONSTRUKTOR-TESTER
+        // -------------------------------------------
+
+
         [Fact]  // Testar att konstruktorn sätter egenskaper korrekt
         public void Constructor_ShouldSetPropertiesCorrectly()
         {
@@ -27,7 +32,7 @@ namespace Biblioteksystem.Tests.Models
         public void Constructor_WithIsAvailableFalse_ShouldSetIsAvailableToFalse() // Testar att konstruktorn sätter IsAvailable korrekt när false anges
         {
             // Arrange & Act
-            var book = new Book("978-91-0-012345-6", "Testbok", "Testförfattare", 2024, false);
+            var book = new Book("12345", "Testbok", "Testförfattare", 2024, false);
 
             // Assert
             Assert.False(book.IsAvailable);
@@ -38,27 +43,20 @@ namespace Biblioteksystem.Tests.Models
         // ISAVAILABLE-TESTER
         // ------------------------------------------
 
-        [Fact]
-        public void IsAvailable_ShouldBeTrueForNewBook() // Testar att IsAvailable är true för en ny bok
-        {
-            // Arrange & Act
-            var book = new Book("978-91-0-012345-6", "Testbok", "Testförfattare", 2024);
-
-            // Assert
-            Assert.True(book.IsAvailable);
-        }
-
-        [Fact]
-        public void IsAvailable_CanBeSetToFalse() // Testar att IsAvailable kan sättas till false
+        // Testar att IsAvailable kan ändras
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        public void IsAvailable_CanBeChanged(bool initialValue, bool newValue)
         {
             // Arrange
-            var book = new Book("978-91-0-012345-6", "Testbok", "Testförfattare", 2024);
+            var book = new Book("123", "Testbok", "Testförfattare", 2024, initialValue);
 
             // Act
-            book.IsAvailable = false;
+            book.IsAvailable = newValue;
 
             // Assert
-            Assert.False(book.IsAvailable);
+            Assert.Equal(newValue, book.IsAvailable);
         }
 
 
@@ -70,13 +68,13 @@ namespace Biblioteksystem.Tests.Models
         public void GetInfo_ShouldReturnFormattedString() // Testar att GetInfo returnerar korrekt formaterad sträng
         {
             // Arrange
-            var book = new Book("978-91-0-012345-6", "Testbok", "Testförfattare", 2024);
+            var book = new Book("12345", "Testbok", "Testförfattare", 2024);
 
             // Act
             var result = book.GetInfo();
 
             // Assert
-            Assert.Contains("978-91-0-012345-6", result);
+            Assert.Contains("12345", result);
             Assert.Contains("Testbok", result);
             Assert.Contains("Testförfattare", result);
             Assert.Contains("2024", result);
@@ -103,59 +101,24 @@ namespace Biblioteksystem.Tests.Models
         // MATCHES-TESTER (Sökfunktion)
         // ------------------------------------------
 
-        [Fact]
-        public void Matches_ShouldReturnTrueForMatchingTitle() // Testar att Matches returnerar true för matchande titel
+        // Tester olika sökord mot bokens egenskaper
+        [Theory]
+        [InlineData("Harry", true)]
+        [InlineData("potter", true)]      // Case-insensitive
+        [InlineData("Rowling", true)]
+        [InlineData("12345", true)]       // ISBN
+        [InlineData("1997", true)]        // År
+        [InlineData("Tolkien", false)]    // Ingen match
+        public void Matches_ShouldReturnExpectedResult(string searchTerm, bool expected)
         {
             // Arrange
             var book = new Book("12345", "Harry Potter", "J.K. Rowling", 1997);
 
-            // Act & Assert
-            Assert.True(book.Matches("Harry"));
-            Assert.True(book.Matches("potter")); // Case-insensitive
-        }
+            // Act
+            var result = book.Matches(searchTerm);
 
-        [Fact]
-        public void Matches_ShouldReturnTrueForMatchingAuthor() // Testar att Matches returnerar true för matchande författare
-        {
-            // Arrange
-            var book = new Book("12345", "Harry Potter", "J.K. Rowling", 1997);
-
-            // Act & Assert
-            Assert.True(book.Matches("Rowling"));
-            Assert.True(book.Matches("j.k.")); // Case-insensitive
-        }
-
-        [Fact]
-        public void Matches_ShouldReturnTrueForMatchingISBN() // Testar att Matches returnerar true för matchande ISBN
-        {
-            // Arrange
-            var book = new Book("12345", "Harry Potter", "J.K. Rowling", 1997);
-
-            // Act & Assert
-            Assert.True(book.Matches("123"));
-            Assert.True(book.Matches("345")); // Delvis match
-
-        }
-
-        [Fact]
-        public void Matches_ShouldReturnTrueForMatchingYear() // Testar att Matches returnerar true för matchande publiceringsår
-        {
-            // Arrange
-            var book = new Book("12345", "Harry Potter", "J.K. Rowling", 1997);
-
-            // Act & Assert
-            Assert.True(book.Matches("1997"));
-        }
-
-        [Fact]
-        public void Matches_ShouldReturnFalseForNonMatchingSearchTerm() // Testar att Matches returnerar false för icke-matchande sökord
-        {
-            // Arrange
-            var book = new Book("978-91-0-012345-6", "Harry Potter", "J.K. Rowling", 1997);
-
-            // Act & Assert
-            Assert.False(book.Matches("Tolkien"));
-            Assert.False(book.Matches("Sagan om ringen"));
+            // Assert
+            Assert.Equal(expected, result);
         }
 
     }

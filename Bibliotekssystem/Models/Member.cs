@@ -25,8 +25,8 @@
         }
 
         // Interna metoder som bara LoanManager använder
-        internal void AddBorrowedBook(Book book) => _borrowedBooks.Add(book);
-        internal void RemoveBorrowedBook(Book book) => _borrowedBooks.Remove(book);
+        public void AddBorrowedBook(Book book) => _borrowedBooks.Add(book);
+        public void RemoveBorrowedBook(Book book) => _borrowedBooks.Remove(book);
 
         public bool Matches(string searchTerm)
         {
