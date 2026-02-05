@@ -11,7 +11,7 @@ Detta projekt är en del av kursen i objektorienterad programmering och demonstr
 - Interface och polymorfism genom ISearchable
 - Algoritmer för sökning, sortering och statistikberäkning
 
-- ## Projektstruktur
+## Projektstruktur
 
 **Bibliotekssystem** (huvudprojekt)
 - Models: Book, Member, Loan
@@ -77,7 +77,7 @@ Sökresultat:
 
 
 ## Testning
-Projektet innehåller 127 enhetstester med xUnit som täcker modeller, services, integration samt edge cases och negativa tester.
+Projektet innehåller 132 enhetstester med xUnit som täcker modeller, services, integration samt edge cases och negativa tester.
 
 ### Kör tester
 Passed! - Failed: 0, Passed: 132, Skipped: 0, Total: 132
