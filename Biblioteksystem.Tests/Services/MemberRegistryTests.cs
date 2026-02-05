@@ -140,5 +140,79 @@ namespace Biblioteksystem.Tests.Services
             // Assert
             Assert.Equal(expectedCount, result.Count);  // Kontrollera att antalet matchande medlemmar är korrekt
         }
+
+
+
+        // ------------------------------------------
+        // EDGE CASES & NEGATIVA TESTER
+        // ------------------------------------------
+
+        [Fact]
+        public void RemoveMember_ShouldNotThrow_WhenMemberDoesNotExist()
+        {
+            // Arrange
+            var registry = new MemberRegistry();
+            var member = new Member("M001", "Daniel", "daniel@test.se", DateTime.Now);
+            // Medlemmen läggs INTE till i registret
+
+            // Act & Assert - Ska inte kasta exception
+            registry.RemoveMember(member);
+            Assert.Empty(registry.Members);
+        }
+
+        [Fact]
+        public void SearchMembers_ShouldReturnEmptyList_WhenRegistryIsEmpty()
+        {
+            // Arrange
+            var registry = new MemberRegistry();
+
+            // Act
+            var result = registry.SearchMembers("Daniel");
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(" ")]
+        public void SearchMembers_ShouldHandleEmptyOrWhitespaceSearchTerm(string searchTerm)
+        {
+            // Arrange
+            var registry = new MemberRegistry();
+            registry.AddMember(new Member("M001", "Daniel", "daniel@test.se", DateTime.Now));
+
+            // Act
+            var result = registry.SearchMembers(searchTerm);
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void FindById_ShouldReturnNull_WhenRegistryIsEmpty()
+        {
+            // Arrange
+            var registry = new MemberRegistry();
+
+            // Act
+            var result = registry.FindById("M001");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void FindByEmail_ShouldReturnNull_WhenRegistryIsEmpty()
+        {
+            // Arrange
+            var registry = new MemberRegistry();
+
+            // Act
+            var result = registry.FindByEmail("daniel@test.se");
+
+            // Assert
+            Assert.Null(result);
+        }
     }
 }

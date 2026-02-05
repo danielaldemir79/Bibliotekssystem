@@ -186,5 +186,79 @@ namespace Biblioteksystem.Tests.Services
             Assert.Equal(2022, result[2].PublishedYear);
         }
 
+
+        // ------------------------------------------
+        // EDGE CASES & NEGATIVA TESTER
+        // ------------------------------------------
+
+        [Fact]
+        public void RemoveBook_ShouldNotThrow_WhenBookDoesNotExist()
+        {
+            // Arrange
+            var catalog = new BookCatalog();
+            var book = new Book("123", "Testbok", "Författare", 2024);
+            // Boken läggs INTE till i katalogen
+
+            // Act & Assert - Ska inte kasta exception
+            catalog.RemoveBook(book);
+            Assert.Empty(catalog.Books);
+        }
+
+        [Fact]
+        public void SearchBooks_ShouldReturnEmptyList_WhenCatalogIsEmpty()
+        {
+            // Arrange
+            var catalog = new BookCatalog();
+
+            // Act
+            var result = catalog.SearchBooks("Tolkien");
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(" ")]
+        [InlineData("   ")]
+        public void SearchBooks_ShouldHandleEmptyOrWhitespaceSearchTerm(string searchTerm)
+        {
+            // Arrange
+            var catalog = new BookCatalog();
+            catalog.AddBook(new Book("123", "Testbok", "Författare", 2024));
+
+            // Act
+            var result = catalog.SearchBooks(searchTerm);
+
+            // Assert - Beroende på implementation, antingen tom lista eller alla böcker
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void GetBooksSortedByTitle_ShouldReturnEmptyList_WhenCatalogIsEmpty()
+        {
+            // Arrange
+            var catalog = new BookCatalog();
+
+            // Act
+            var result = catalog.GetBooksSortedByTitle();
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void GetAvailableBooks_ShouldReturnEmptyList_WhenCatalogIsEmpty()
+        {
+            // Arrange
+            var catalog = new BookCatalog();
+
+            // Act
+            var result = catalog.GetAvailableBooks();
+
+            // Assert
+            Assert.Empty(result);
+        }
+
     }
 }

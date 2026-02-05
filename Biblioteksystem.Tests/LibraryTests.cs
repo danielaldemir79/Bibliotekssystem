@@ -146,5 +146,86 @@ namespace Biblioteksystem.Tests
             Assert.NotNull(mostActive);
             Assert.Equal("M002", mostActive.MemberId);  // Anna är mest aktiv
         }
+
+
+        // ------------------------------------------
+        // EDGE CASES & NEGATIVA TESTER
+        // ------------------------------------------
+
+        [Fact]
+        public void Library_ShouldHandleEmptyCatalogStatistics()
+        {
+            // Arrange
+            var library = new Library();
+
+            // Act & Assert - Ska inte kasta exception på tom katalog
+            Assert.Equal(0, library.BookCatalog.Books.Count);
+            Assert.Equal(0, library.BookCatalog.GetAvailableBooks().Count);
+            Assert.Equal(0, library.MemberRegistry.Members.Count);
+            Assert.Equal(0, library.LoanManager.GetActiveLoans().Count);
+            Assert.Null(library.LoanManager.GetMostActiveBorrower());
+        }
+
+        [Fact]
+        public void Library_ShouldNotAllowBorrowingSameBookTwice()
+        {
+            // Arrange
+            var library = new Library();
+            var book = new Book("123", "Testbok", "Författare", 2024);
+            var member1 = new Member("M001", "Daniel", "daniel@test.se", DateTime.Now);
+            var member2 = new Member("M002", "Anna", "anna@test.se", DateTime.Now);
+
+            library.BookCatalog.AddBook(book);
+            library.MemberRegistry.AddMember(member1);
+            library.MemberRegistry.AddMember(member2);
+
+            // Act - Första lånet lyckas
+            var firstLoan = library.LoanManager.CreateLoan(book, member1);
+            // Andra lånet ska misslyckas (boken är redan utlånad)
+            var secondLoan = library.LoanManager.CreateLoan(book, member2);
+
+            // Assert
+            Assert.NotNull(firstLoan);
+            Assert.Null(secondLoan);  // Ska returnera null då boken inte är tillgänglig
+        }
+
+        [Fact]
+        public void Library_ShouldAllowReBorrowingAfterReturn()
+        {
+            // Arrange
+            var library = new Library();
+            var book = new Book("123", "Testbok", "Författare", 2024);
+            var member1 = new Member("M001", "Daniel", "daniel@test.se", DateTime.Now);
+            var member2 = new Member("M002", "Anna", "anna@test.se", DateTime.Now);
+
+            library.BookCatalog.AddBook(book);
+            library.MemberRegistry.AddMember(member1);
+            library.MemberRegistry.AddMember(member2);
+
+            // Act
+            var firstLoan = library.LoanManager.CreateLoan(book, member1);
+            library.LoanManager.ReturnLoan(firstLoan!);
+            var secondLoan = library.LoanManager.CreateLoan(book, member2);  // Nu ska det fungera
+
+            // Assert
+            Assert.NotNull(secondLoan);
+            Assert.Equal(member2, secondLoan.Member);
+        }
+
+        [Fact]
+        public void Library_SearchShouldWorkAcrossMultipleBooks()
+        {
+            // Arrange
+            var library = new Library();
+            library.BookCatalog.AddBook(new Book("1", "C# Programmering", "Anders", 2020));
+            library.BookCatalog.AddBook(new Book("2", "Java Programmering", "Anders", 2021));
+            library.BookCatalog.AddBook(new Book("3", "Python Basics", "Maria", 2022));
+
+            // Act - Sök på gemensam författare
+            var result = library.BookCatalog.SearchBooks("Anders");
+
+            // Assert
+            Assert.Equal(2, result.Count);
+        }
     }
 }

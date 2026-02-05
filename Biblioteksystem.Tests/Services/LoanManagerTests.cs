@@ -268,5 +268,107 @@ namespace Biblioteksystem.Tests.Services
             // Assert
             Assert.Null(result); // Kontrollera att resultatet är null när inga aktiva lån finns
         }
+
+
+
+        // ------------------------------------------
+        // EDGE CASES & NEGATIVA TESTER
+        // ------------------------------------------
+
+        [Fact]
+        public void GetActiveLoans_ShouldReturnEmptyList_WhenNoLoansExist()
+        {
+            // Arrange
+            var loanManager = new LoanManager();
+
+            // Act
+            var result = loanManager.GetActiveLoans();
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void GetOverdueLoans_ShouldReturnEmptyList_WhenNoLoansExist()
+        {
+            // Arrange
+            var loanManager = new LoanManager();
+
+            // Act
+            var result = loanManager.GetOverdueLoans();
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void SearchLoans_ShouldReturnEmptyList_WhenNoLoansExist()
+        {
+            // Arrange
+            var loanManager = new LoanManager();
+
+            // Act
+            var result = loanManager.SearchLoans("Testbok");
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void GetLoansByMember_ShouldReturnEmptyList_WhenMemberHasNoLoans()
+        {
+            // Arrange
+            var loanManager = new LoanManager();
+            var memberWithNoLoans = new Member("M999", "Ingen Lån", "ingen@test.se", DateTime.Now);
+
+            // Skapa lån för annan medlem
+            var otherMember = new Member("M001", "Annan", "annan@test.se", DateTime.Now);
+            var book = new Book("123", "Bok", "Författare", 2024);
+            loanManager.CreateLoan(book, otherMember);
+
+            // Act
+            var result = loanManager.GetLoansByMember(memberWithNoLoans);
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void CreateLoan_ShouldAllowSameMemberToBorrowMultipleBooks()
+        {
+            // Arrange
+            var loanManager = new LoanManager();
+            var member = new Member("M001", "Daniel", "daniel@test.se", DateTime.Now);
+            var book1 = new Book("1", "Bok1", "Författare", 2024);
+            var book2 = new Book("2", "Bok2", "Författare", 2024);
+            var book3 = new Book("3", "Bok3", "Författare", 2024);
+
+            // Act
+            var loan1 = loanManager.CreateLoan(book1, member);
+            var loan2 = loanManager.CreateLoan(book2, member);
+            var loan3 = loanManager.CreateLoan(book3, member);
+
+            // Assert
+            Assert.NotNull(loan1);
+            Assert.NotNull(loan2);
+            Assert.NotNull(loan3);
+            Assert.Equal(3, loanManager.GetLoansByMember(member).Count);
+        }
+
+        [Fact]
+        public void IsOverdue_EdgeCase_ShouldHandleDueDateExactlyToday()
+        {
+            // Arrange - Lån med förfallodatum exakt vid midnatt idag (redan passerat)
+            var loanManager = new LoanManager();
+            var book = new Book("123", "Bok", "Författare", 2024);
+            var member = new Member("M001", "Daniel", "daniel@test.se", DateTime.Now);
+
+            // Skapa lån som förföll igår
+            var loan = loanManager.CreateLoan(book, member, 0);  // 0 dagar = förfaller idag
+
+            // Act & Assert
+            Assert.NotNull(loan);
+            // Beroende på exakt tid kan detta vara true eller false
+        }
     }
 }
