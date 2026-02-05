@@ -11,6 +11,20 @@ Detta projekt är en del av kursen i objektorienterad programmering och demonstr
 - Interface och polymorfism genom ISearchable
 - Algoritmer för sökning, sortering och statistikberäkning
 
+- ## Projektstruktur
+
+**Bibliotekssystem** (huvudprojekt)
+- Models: Book, Member, Loan
+- Services: BookCatalog, MemberRegistry, LoanManager
+- Interfaces: ISearchable
+- Helpers: ConsoleHelper, InputHelper, MenuHandler
+- Library.cs och Program.cs
+
+**Biblioteksystem.Tests** (testprojekt)
+- Models: BookTests, MemberTests, LoanTests
+- Services: BookCatalogTests, MemberRegistryTests, LoanManagerTests
+- LibraryTests
+
 ## Funktioner
 
 ### Bokhantering
@@ -79,6 +93,7 @@ Alla sökbara klasser implementerar ISearchable för enhetlig sökning med case-
 - IReadOnlyList för att exponera listor som readonly och bevara inkapsling
 - Nullable return types där metoder kan returnera null för tydlig hantering
 - Negativa lånedagar tillåts i CreateLoan för att möjliggöra testning av försenade lån
+
 
 ## Författare
 Daniel Aldemir
