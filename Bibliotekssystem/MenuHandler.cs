@@ -252,12 +252,15 @@ namespace Bibliotekssystem.Helpers
                 return;
             }
 
-            // Visa aktiva lån med nummer
+            // Visa aktiva lån med nummer och eventuell förseningsavgift
             ConsoleHelper.WriteCyan("Aktiva lån:");
             for (int i = 0; i < memberLoans.Count; i++)
             {
                 var loan = memberLoans[i];
-                Console.WriteLine($"{i + 1}. {loan.Book.Title} - Förfaller: {loan.DueDate.ToShortDateString()}");
+                string overdueInfo = loan.IsOverdue                         // Visa förseningsavgift om lånet är försenat
+                    ? $" - FÖRSENAD! Avgift: {loan.CalculateLateFee():C}"   // Visa avgiften i valutaformat
+                    : "";
+                Console.WriteLine($"{i + 1}. {loan.Book.Title} - Förfaller: {loan.DueDate.ToShortDateString()}{overdueInfo}");
             }
 
             // Låt användaren välja lån att returnera
@@ -273,10 +276,15 @@ namespace Bibliotekssystem.Helpers
             // Returnera valt lån
             var loanToReturn = memberLoans[choice - 1];
             bool success = library.LoanManager.ReturnLoan(loanToReturn);
+            decimal lateFee = loanToReturn.CalculateLateFee();
 
             if (success)
             {
                 ConsoleHelper.WriteGreen($"Boken '{loanToReturn.Book.Title}' har returnerats.");
+                if (lateFee > 0)
+                {
+                    ConsoleHelper.WriteYellow($"Observera att en förseningsavgift på {lateFee:C} har tillkommit.");
+                }
             }
             else
             {

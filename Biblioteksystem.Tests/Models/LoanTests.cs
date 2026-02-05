@@ -146,5 +146,53 @@ namespace Biblioteksystem.Tests.Models
             // Assert
             Assert.Equal(expected, result);
         }
+
+
+
+        // ------------------------------------------
+        // CALCULATELATEFEE-TESTER
+        // ------------------------------------------
+
+        [Fact]
+        public void CalculateLateFee_ShouldReturnZero_WhenNotOverdue()
+        {
+            // Arrange - Lån som inte är försenat
+            var loan = new Loan(book, member, DateTime.Now, DateTime.Now.AddDays(14));
+
+            // Act
+            var fee = loan.CalculateLateFee();
+
+            // Assert
+            Assert.Equal(0, fee);  // Verifierar att CalculateLateFee returnerar 0 när lånet inte är försenat
+        }
+
+        [Fact]
+        public void CalculateLateFee_ShouldReturnCorrectAmount_WhenOverdue()
+        {
+            // Arrange - Lån som är 5 dagar försenat
+            var loan = new Loan(book, member, DateTime.Now.AddDays(-35), DateTime.Now.AddDays(-5));
+
+            // Act
+            var fee = loan.CalculateLateFee(10m);  // 10 kr per dag
+
+            // Assert
+            Assert.True(fee >= 50);  // Förseningsavgift för 5 dagar * 10 kr
+        }
+
+        [Theory]
+        [InlineData(10, 50)]   // 10 kr/dag = 50 kr för 5 dagar
+        [InlineData(20, 100)]  // 20 kr/dag = 100 kr för 5 dagar
+        [InlineData(5, 25)]    // 5 kr/dag = 25 kr för 5 dagar
+        public void CalculateLateFee_ShouldUseCorrectFeePerDay(decimal feePerDay, decimal expectedMinFee)
+        {
+            // Arrange - Lån som är 5 dagar försenat
+            var loan = new Loan(book, member, DateTime.Now.AddDays(-35), DateTime.Now.AddDays(-5));
+
+            // Act
+            var fee = loan.CalculateLateFee(feePerDay);
+
+            // Assert
+            Assert.True(fee >= expectedMinFee);
+        }
     }
 }

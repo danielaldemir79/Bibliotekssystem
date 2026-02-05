@@ -10,6 +10,13 @@
         public bool IsReturned => ReturnDate.HasValue;
         public bool IsOverdue => !IsReturned && DateTime.Now > DueDate;
 
+        public decimal CalculateLateFee(decimal feePerDay = 10m) // Standardavgift per dag är 10 kronor vid försening
+        {
+            if (!IsOverdue) return 0;                       // Om boken inte är försenad, ingen avgift
+            int daysLate = (DateTime.Now - DueDate).Days;   // Beräkna antalet dagar som boken är försenad
+            return daysLate * feePerDay;                    // Returnera den totala avgiften baserat på antalet försenade dagar
+        }
+
         public Loan(Book book, Member member, DateTime loanDate, DateTime dueDate)
         {
             Book = book;
@@ -45,5 +52,7 @@
                    DueDate.ToString("d").Contains(searchTerm) ||
                    (ReturnDate.HasValue && ReturnDate.Value.ToString("d").Contains(searchTerm));
         }
+
+     
     }
 }
