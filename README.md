@@ -81,7 +81,7 @@ Projektet innehåller 127 enhetstester med xUnit som täcker modeller, services,
 
 ### Kör tester
 Passed! - Failed: 0, Passed: 132, Skipped: 0, Total: 132
-![Testresultat](screenshot/Tester.png)
+![Testresultat](Bibliotekssystem/Screenshot/Tester.png)
 
 
 ## Teknisk dokumentation
