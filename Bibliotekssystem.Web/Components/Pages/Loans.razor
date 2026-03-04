@@ -1,0 +1,280 @@
+﻿@page "/loans"
+@inject ILoanRepository LoanRepo
+@inject IBookRepository BookRepo
+@inject IMemberRepository MemberRepo
+
+<PageTitle>Lån</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <BackButton />
+        <h1 class="mb-0">📋 Lån</h1>
+    </div>
+    <button class="btn btn-primary" @onclick="() => showLoanForm = !showLoanForm">
+        @(showLoanForm ? "✕ Stäng" : "+ Nytt lån")
+    </button>
+</div>
+
+@if (showLoanForm)
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Skapa nytt lån</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Välj bok</label>
+                    <select class="form-select" @bind="selectedBookId">
+                        <option value="0">-- Välj en bok --</option>
+                        @foreach (var book in availableBooks)
+                        {
+                            <option value="@book.Id">@book.Title (@book.ISBN)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Välj medlem</label>
+                    <select class="form-select" @bind="selectedMemberId">
+                        <option value="0">-- Välj en medlem --</option>
+                        @foreach (var member in allMembers)
+                        {
+                            <option value="@member.Id">@member.Name (@member.MemberId)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Lånedagar</label>
+                    <input type="number" class="form-control" @bind="loanDays" min="1" max="90" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-success" @onclick="CreateLoan"
+                            disabled="@(selectedBookId == 0 || selectedMemberId == 0)">
+                        Skapa lån
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(loanError))
+            {
+                <div class="alert alert-danger mt-2">@loanError</div>
+            }
+        </div>
+    </div>
+}
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <button class="nav-link @(activeTab == "active" ? "active" : "")" @onclick="ShowActiveLoans">
+            Aktiva lån
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(activeTab == "overdue" ? "active" : "")" @onclick="ShowOverdueLoans">
+            Försenade
+            @if (overdueLoans.Any())
+            {
+                <span class="badge bg-danger ms-1">@overdueLoans.Count()</span>
+            }
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(activeTab == "all" ? "active" : "")" @onclick="ShowAllLoans">
+            Alla lån
+        </button>
+    </li>
+</ul>
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <div class="input-group">
+            <span class="input-group-text bg-primary text-white">Visa</span>
+            <select class="form-select fw-bold" @bind="pageSize" @bind:after="ResetPage">
+                <option value="5">5 per sida</option>
+                <option value="10">10 per sida</option>
+                <option value="50">50 per sida</option>
+                <option value="100">100 per sida</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <p><em>Laddar lån...</em></p>
+}
+else
+{
+    var displayLoans = activeTab switch
+    {
+        "overdue" => overdueLoans,
+        "all" => allLoans,
+        _ => activeLoans
+    };
+
+    var loanTotalPages = (int)Math.Ceiling((double)displayLoans.Count() / pageSize);
+    var pagedLoans = displayLoans.Skip((currentPage - 1) * pageSize).Take(pageSize);
+
+    if (!displayLoans.Any())
+    {
+        <div class="alert alert-info">Inga lån att visa.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Bok</th>
+                    <th>Låntagare</th>
+                    <th class="d-none d-lg-table-cell">Lånedatum</th>
+                    <th>Förfallodatum</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end">Åtgärder</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var loan in pagedLoans)
+                {
+                    <tr class="@(loan.DueDate < DateTime.Now && loan.ReturnDate == null ? "table-danger" : "")">
+                        <td><strong>@loan.Book.Title</strong></td>
+                        <td>@loan.Member.Name</td>
+                        <td class="d-none d-lg-table-cell">@loan.LoanDate.ToShortDateString()</td>
+                        <td>@loan.DueDate.ToShortDateString()</td>
+                        <td class="text-center">
+                            <LoanStatusBadge Loan="@loan" />
+                        </td>
+                        <td class="text-end">
+                            @if (loan.ReturnDate == null)
+                            {
+                                <button class="btn btn-sm btn-success" @onclick="() => ReturnLoan(loan)">
+                                    📥 Returnera
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+
+        @if (loanTotalPages > 1)
+        {
+            <nav>
+                <ul class="pagination justify-content-center mt-3">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => GoToPage(currentPage - 1)">←</button>
+                    </li>
+                    @for (int i = 1; i <= loanTotalPages; i++)
+                    {
+                        var p = i;
+                        <li class="page-item @(p == currentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(p)">@(p)</button>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage == loanTotalPages ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => GoToPage(currentPage + 1)">→</button>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+}
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-success mt-2">@message</div>
+}
+
+@code {
+    private IEnumerable<Loan> allLoans = [];
+    private IEnumerable<Loan> activeLoans = [];
+    private IEnumerable<Loan> overdueLoans = [];
+    private IEnumerable<Book> availableBooks = [];
+    private IEnumerable<Member> allMembers = [];
+
+    private bool isLoading = true;
+    private bool showLoanForm = false;
+    private string activeTab = "active";
+    private int selectedBookId;
+    private int selectedMemberId;
+    private int loanDays = 30;
+    private int pageSize = 5;
+    private int currentPage = 1;
+    private string? message;
+    private string? loanError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        allLoans = await LoanRepo.GetAllAsync();
+        activeLoans = await LoanRepo.GetActiveLoansAsync();
+        overdueLoans = await LoanRepo.GetOverdueLoansAsync();
+
+        var books = await BookRepo.GetAllAsync();
+        availableBooks = books.Where(b => b.IsAvailable);
+
+        allMembers = await MemberRepo.GetAllAsync();
+        isLoading = false;
+    }
+
+    private async Task CreateLoan()
+    {
+        try
+        {
+            loanError = null;
+            await LoanRepo.CreateLoanAsync(selectedBookId, selectedMemberId, loanDays);
+            message = "Lånet har skapats!";
+            selectedBookId = 0;
+            selectedMemberId = 0;
+            showLoanForm = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            loanError = ex.Message;
+        }
+    }
+
+    private async Task ReturnLoan(Loan loan)
+    {
+        try
+        {
+            var result = await LoanRepo.ReturnLoanAsync(loan.Id);
+            if (result)
+            {
+                var fee = loan.CalculateLateFee();
+                message = fee > 0
+                    ? $"'{loan.Book.Title}' returnerad. Förseningsavgift: {fee} kr"
+                    : $"'{loan.Book.Title}' returnerad.";
+            }
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+    }
+
+    private void ShowActiveLoans() { activeTab = "active"; currentPage = 1; }
+    private void ShowOverdueLoans() { activeTab = "overdue"; currentPage = 1; }
+    private void ShowAllLoans() { activeTab = "all"; currentPage = 1; }
+    private void ResetPage() => currentPage = 1;
+
+    private void GoToPage(int p)
+    {
+        var max = (int)Math.Ceiling((double)GetDisplayLoans().Count() / pageSize);
+        if (p >= 1 && p <= max)
+            currentPage = p;
+    }
+
+    private IEnumerable<Loan> GetDisplayLoans() => activeTab switch
+    {
+        "overdue" => overdueLoans,
+        "all" => allLoans,
+        _ => activeLoans
+    };
+}

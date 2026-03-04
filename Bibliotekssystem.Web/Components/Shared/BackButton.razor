@@ -1,0 +1,12 @@
+@inject IJSRuntime JS
+
+<button class="btn btn-sm btn-outline-danger rounded-pill px-3" @onclick="GoBack">
+    ← Tillbaka
+</button>
+
+@code {
+    private async Task GoBack()
+    {
+        await JS.InvokeVoidAsync("history.back");
+    }
+}

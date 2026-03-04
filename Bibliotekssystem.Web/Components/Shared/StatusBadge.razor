@@ -1,0 +1,8 @@
+<span class="badge @(IsAvailable ? "bg-success" : "bg-danger")">
+    @(IsAvailable ? "🟢 Tillgänglig" : "🔴 Utlånad")
+</span>
+
+@code {
+    [Parameter]
+    public bool IsAvailable { get; set; }
+}

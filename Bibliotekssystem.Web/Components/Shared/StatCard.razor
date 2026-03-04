@@ -1,0 +1,19 @@
+<div class="card text-white @BgColor h-100">
+    <div class="card-body d-flex flex-column p-2 p-lg-3">
+        <h6 class="card-title mb-1">@Icon @Title</h6>
+        <p class="card-text display-6 mb-1">@Value</p>
+        @if (!string.IsNullOrEmpty(LinkUrl))
+        {
+            <a href="@LinkUrl" class="text-white mt-auto small">@LinkText →</a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "";
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public int Value { get; set; }
+    [Parameter] public string BgColor { get; set; } = "bg-primary";
+    [Parameter] public string? LinkUrl { get; set; }
+    [Parameter] public string LinkText { get; set; } = "Visa alla";
+}

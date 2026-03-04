@@ -1,0 +1,27 @@
+@inject NavigationManager Navigation
+
+<div class="card h-100 @(Book.IsAvailable ? "border-success" : "border-danger")">
+    <div class="card-body d-flex flex-column">
+        <h5 class="card-title mb-1">@Book.Title</h5>
+        <p class="card-text text-muted mb-1">@Book.Author (@Book.PublishedYear)</p>
+        <p class="card-text mb-3"><small class="text-secondary">ISBN: @Book.ISBN</small></p>
+        <div class="mt-auto">
+            <div class="mb-2">
+                <StatusBadge IsAvailable="@Book.IsAvailable" />
+            </div>
+            <button class="btn btn-sm btn-primary w-100" @onclick="GoToDetails">
+                🔍 Visa detaljer
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Book Book { get; set; } = default!;
+
+    private void GoToDetails()
+    {
+        Navigation.NavigateTo($"books/{Book.Id}");
+    }
+}

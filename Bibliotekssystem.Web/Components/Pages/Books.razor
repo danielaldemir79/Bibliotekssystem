@@ -1,0 +1,337 @@
+﻿@page "/books"
+@inject IBookRepository BookRepo
+@inject NavigationManager Navigation
+
+<PageTitle>Böcker</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <BackButton />
+        <h1 class="mb-0">📖 Böcker</h1>
+    </div>
+    <button class="btn btn-primary" @onclick="() => showAddForm = !showAddForm">
+        @(showAddForm ? "✕ Stäng" : "+ Lägg till bok")
+    </button>
+</div>
+
+
+@if (showAddForm)
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Lägg till ny bok</h5>
+            <EditForm Model="@newBook" OnValidSubmit="HandleAddBook" FormName="AddBookForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <div class="row g-3">
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label">ISBN</label>
+                        <InputText @bind-Value="newBook.ISBN" class="form-control" />
+                        <ValidationMessage For="@(() => newBook.ISBN)" class="text-danger" />
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label">Titel</label>
+                        <InputText @bind-Value="newBook.Title" class="form-control" />
+                        <ValidationMessage For="@(() => newBook.Title)" class="text-danger" />
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label">Författare</label>
+                        <InputText @bind-Value="newBook.Author" class="form-control" />
+                        <ValidationMessage For="@(() => newBook.Author)" class="text-danger" />
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label class="form-label">Utgivningsår</label>
+                        <InputNumber @bind-Value="newBook.PublishedYear" class="form-control" />
+                        <ValidationMessage For="@(() => newBook.PublishedYear)" class="text-danger" />
+                    </div>
+                    <div class="col-sm-6 col-lg-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success">Spara</button>
+                    </div>
+                </div>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(addError))
+            {
+                <div class="alert alert-danger mt-2">@addError</div>
+            }
+        </div>
+    </div>
+}
+
+
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <input type="text" class="form-control" placeholder="Sök på titel, författare eller ISBN..."
+               @bind="searchTerm" @bind:event="oninput" @bind:after="FilterBooks" />
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" @bind="sortBy" @bind:after="FilterBooks">
+            <option value="title">Sortera: Titel</option>
+            <option value="author">Sortera: Författare</option>
+            <option value="year">Sortera: Utgivningsår</option>
+        </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-center">
+        <span class="text-muted">@filteredBooks.Count() böcker</span>
+    </div>
+    <div class="col-md-3">
+        <div class="input-group">
+            <span class="input-group-text bg-primary text-white">Visa</span>
+            <select class="form-select fw-bold" @bind="pageSize" @bind:after="FilterBooks">
+                <option value="5">5 per sida</option>
+                <option value="10">10 per sida</option>
+                <option value="50">50 per sida</option>
+                <option value="100">100 per sida</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+
+
+@if (isLoading)
+{
+    <p><em>Laddar böcker...</em></p>
+}
+else if (!filteredBooks.Any())
+{
+    <div class="alert alert-info">Inga böcker hittades.</div>
+}
+else
+{
+    <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th class="d-none d-lg-table-cell">ISBN</th>
+                <th>Titel</th>
+                <th>Författare</th>
+                <th class="text-center">År</th>
+                <th class="text-center">Status</th>
+                <th class="text-end">Åtgärder</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in pagedBooks)
+            {
+                <tr>
+                    <td class="d-none d-lg-table-cell"><code>@book.ISBN</code></td>
+                    <td><strong>@book.Title</strong></td>
+                    <td>@book.Author</td>
+                    <td class="text-center">@book.PublishedYear</td>
+                    <td class="text-center">
+                        <StatusBadge IsAvailable="@book.IsAvailable" />
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-primary" @onclick="() => GoToDetails(book.Id)">
+                                🔍 <span class="d-none d-xl-inline">Detaljer</span>
+                            </button>
+                            <button class="btn btn-sm btn-warning" @onclick="() => StartEdit(book)">
+                                ✏️ <span class="d-none d-xl-inline">Redigera</span>
+                            </button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteBook(book)"
+                                    disabled="@(!book.IsAvailable)">
+                                🗑️ <span class="d-none d-xl-inline">Ta bort</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav>
+            <ul class="pagination justify-content-center mt-3">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => GoToPage(currentPage - 1)">←</button>
+                </li>
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    var page = i;
+                    <li class="page-item @(page == currentPage ? "active" : "")">
+                        <button class="page-link" @onclick="() => GoToPage(page)">@(page)</button>
+                    </li>
+                }
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => GoToPage(currentPage + 1)">→</button>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@if (editBook != null)
+{
+    <div class="card mt-3 border-warning">
+        <div class="card-body">
+            <h5 class="card-title">Redigera bok</h5>
+            <EditForm Model="@editBook" OnValidSubmit="HandleEditBook" FormName="EditBookForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <div class="row g-3">
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label">ISBN</label>
+                        <InputText @bind-Value="editBook.ISBN" class="form-control" />
+                        <ValidationMessage For="@(() => editBook.ISBN)" class="text-danger" />
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label">Titel</label>
+                        <InputText @bind-Value="editBook.Title" class="form-control" />
+                        <ValidationMessage For="@(() => editBook.Title)" class="text-danger" />
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label">Författare</label>
+                        <InputText @bind-Value="editBook.Author" class="form-control" />
+                        <ValidationMessage For="@(() => editBook.Author)" class="text-danger" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Utgivningsår</label>
+                        <InputNumber @bind-Value="editBook.PublishedYear" class="form-control" />
+                        <ValidationMessage For="@(() => editBook.PublishedYear)" class="text-danger" />
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end gap-1">
+                        <button type="submit" class="btn btn-warning">Spara</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Avbryt</button>
+                    </div>
+                </div>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(editError))
+            {
+                <div class="alert alert-danger mt-2">@editError</div>
+            }
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-success mt-2">@message</div>
+}
+
+@code {
+    private IEnumerable<Book> allBooks = [];
+    private IEnumerable<Book> filteredBooks = [];
+    private Book newBook = new();
+    private bool isLoading = true;
+    private bool showAddForm = false;
+    private string searchTerm = "";
+    private string sortBy = "title";
+    private int pageSize = 5;
+    private int currentPage = 1;
+    private int totalPages => (int)Math.Ceiling((double)filteredBooks.Count() / pageSize);
+    private IEnumerable<Book> pagedBooks => filteredBooks.Skip((currentPage - 1) * pageSize).Take(pageSize);
+    private string? message;
+    private string? addError;
+    private Book? editBook;
+    private string? editError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBooks();
+    }
+
+    private async Task LoadBooks()
+    {
+        isLoading = true;
+        allBooks = await BookRepo.GetAllAsync();
+        FilterBooks();
+        isLoading = false;
+    }
+
+    private void FilterBooks()
+    {
+        var result = allBooks.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            result = result.Where(b => b.Matches(searchTerm));
+        }
+
+        filteredBooks = sortBy switch
+        {
+            "author" => result.OrderBy(b => b.Author),
+            "year" => result.OrderBy(b => b.PublishedYear),
+            _ => result.OrderBy(b => b.Title)
+        };
+
+        currentPage = 1;
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= totalPages)
+            currentPage = page;
+    }
+
+    private async Task HandleAddBook()
+    {
+        try
+        {
+            addError = null;
+            await BookRepo.AddAsync(newBook);
+            message = $"Boken '{newBook.Title}' har lagts till!";
+            newBook = new();
+            showAddForm = false;
+            await LoadBooks();
+        }
+        catch (InvalidOperationException ex)
+        {
+            addError = ex.Message;
+        }
+    }
+
+    private async Task DeleteBook(Book book)
+    {
+        try
+        {
+            await BookRepo.DeleteAsync(book.Id);
+            message = $"Boken '{book.Title}' har tagits bort.";
+            await LoadBooks();
+        }
+        catch (InvalidOperationException ex)
+        {
+            message = ex.Message;
+        }
+    }
+
+    private void GoToDetails(int id)
+    {
+        Navigation.NavigateTo($"books/{id}");
+    }
+
+    private void StartEdit(Book book)
+    {
+        editBook = book;
+        editError = null;
+    }
+
+    private void CancelEdit()
+    {
+        editBook = null;
+        editError = null;
+    }
+
+    private async Task HandleEditBook()
+    {
+        try
+        {
+            editError = null;
+            await BookRepo.UpdateAsync(editBook!);
+            message = $"Boken '{editBook!.Title}' har uppdaterats!";
+            editBook = null;
+            await LoadBooks();
+        }
+        catch (InvalidOperationException ex)
+        {
+            editError = ex.Message;
+        }
+    }
+}

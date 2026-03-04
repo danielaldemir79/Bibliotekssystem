@@ -1,39 +1,167 @@
-# Bibliotekssystem
+# 📚 Bibliotekssystem
 
-Ett konsolbaserat bibliotekssystem utvecklat i C# som hanterar böcker, medlemmar och utlåning.
+Ett bibliotekshanteringssystem med konsolapp (Del 1) och webbgränssnitt (Del 2), byggt med .NET 9, Blazor Server och Entity Framework Core.
 
-## Om projektet
+---
 
-Detta projekt är en del av kursen i objektorienterad programmering och demonstrerar:
+## Del 2 — Webbapplikation (Blazor + EF Core)
 
-- Klasser och inkapsling med väldefinierade modeller
-- Komposition där Library klassen koordinerar BookCatalog, MemberRegistry och LoanManager
-- Interface och polymorfism genom ISearchable
-- Algoritmer för sökning, sortering och statistikberäkning
+### Projektstruktur
 
-## Projektstruktur
+```
+Bibliotekssystem/
+├── Bibliotekssystem/              # Konsolapplikation (Del 1)
+├── Bibliotekssystem.Core/         # Modeller och interfaces
+├── Bibliotekssystem.Data/         # Entity Framework, DbContext, Repositories
+├── Bibliotekssystem.Web/          # Blazor Server webbgränssnitt
+└── Biblioteksystem.Tests/         # Enhetstester (xUnit + bUnit)
+```
 
-**Bibliotekssystem** (huvudprojekt)
-- Models: Book, Member, Loan
-- Services: BookCatalog, MemberRegistry, LoanManager
-- Interfaces: ISearchable
-- Helpers: ConsoleHelper, InputHelper, MenuHandler
-- Library.cs och Program.cs
+### Kom igång
 
-**Biblioteksystem.Tests** (testprojekt)
-- Models: BookTests, MemberTests, LoanTests
-- Services: BookCatalogTests, MemberRegistryTests, LoanManagerTests
-- LibraryTests
+#### Krav
+- .NET 9 SDK
+- Visual Studio 2022/2025
 
-## Funktioner
+#### Starta projektet
+1. Klona repot
+2. Öppna `Bibliotekssystem.sln` i Visual Studio
+3. Sätt **Bibliotekssystem.Web** som startprojekt
+4. Tryck **F5**
 
-### Bokhantering
+Databasen (`library.db`) skapas automatiskt vid första körningen med startdata (15 böcker, 8 medlemmar och 8 lån).
+
+#### Köra tester
+Öppna Test Explorer i Visual Studio eller kör:
+```
+dotnet test
+```
+
+### Databasschema
+
+SQLite-databas med tre tabeller:
+
+```
+┌──────────────────────┐       ┌──────────────────────┐
+│       Books          │       │      Members         │
+├──────────────────────┤       ├──────────────────────┤
+│ Id (PK)              │       │ Id (PK)              │
+│ ISBN (UNIQUE)        │       │ MemberId (UNIQUE)    │
+│ Title                │       │ Name                 │
+│ Author               │       │ Email (UNIQUE)       │
+│ PublishedYear        │       │ MemberSince          │
+│ IsAvailable          │       │                      │
+└──────────┬───────────┘       └──────────┬───────────┘
+           │ 1:N                          │ 1:N
+           │                              │
+       ┌───┴──────────────────────────────┴───┐
+       │              Loans                    │
+       ├───────────────────────────────────────┤
+       │ Id (PK)                               │
+       │ BookId (FK → Books)                   │
+       │ MemberId (FK → Members)               │
+       │ LoanDate                              │
+       │ DueDate                               │
+       │ ReturnDate (nullable)                 │
+       └───────────────────────────────────────┘
+```
+
+#### Relationer
+- **Book → Loans**: En bok kan ha många lån (1:N)
+- **Member → Loans**: En medlem kan ha många lån (1:N)
+- **DeleteBehavior.Restrict**: Böcker/medlemmar med aktiva lån kan inte tas bort
+
+#### Constraints
+- `Books.ISBN` — unikt index
+- `Members.MemberId` — unikt index
+- `Members.Email` — unikt index
+
+### Blazor-sidor
+
+| Sida | Route | Beskrivning |
+|------|-------|-------------|
+| Startsida | `/` | Statistik, senast tillagda böcker |
+| Böcker | `/books` | Boklista med sök, sortering, paginering, CRUD |
+| Bokdetaljer | `/books/{id}` | Bokinformation, låna/returnera direkt, lånehistorik |
+| Medlemmar | `/members` | Medlemslista med sök, paginering, registrering |
+| Lån | `/loans` | Aktiva/försenade/alla lån med paginering, skapa lån, returnera |
+
+### Återanvändbara komponenter
+
+| Komponent | Beskrivning |
+|-----------|-------------|
+| `BookCard` | Visar bokinfo med status och detaljknapp |
+| `StatusBadge` | 🟢 Tillgänglig / 🔴 Utlånad |
+| `LoanStatusBadge` | Aktiv / Försenad / Returnerad |
+| `StatCard` | Statistikkort med ikon, värde och länk |
+| `BackButton` | Navigerar tillbaka via webbläsarhistorik |
+
+### Teknisk stack (Del 2)
+- **Frontend**: Blazor Server (.NET 9)
+- **Backend**: Entity Framework Core 9
+- **Databas**: SQLite
+- **Tester**: xUnit + bUnit (21 tester)
+- **CSS**: Bootstrap 5
+
+### Tester (Del 2)
+
+21 enhetstester fördelade på:
+
+| Kategori | Antal | Typ |
+|----------|-------|-----|
+| BookRepository | 8 | CRUD, validering, sökning |
+| MemberRepository | 3 | Validering, sökning |
+| LoanRepository | 6 | Skapa lån, returnera, aktiva/försenade |
+| BookCard (bUnit) | 4 | Blazor-komponenttester |
+
+### Screenshots
+
+*Se bifogade bilder i inlämningen.*
+
+### Responsiv design
+
+Sidan anpassar sig till tre storlekslägen:
+
+| Storlek | Bredd | Meny | Layout |
+|---------|-------|------|--------|
+| **Mobil** | <768px | Hamburger-meny | 2 kort/rad, knappar staplas vertikalt |
+| **Tablet** | 768–991px | Sidebar | 2 kort/rad, gömd ISBN/E-post, ikoner utan text |
+| **Desktop** | 992px+ | Sidebar | 4 kort/rad, alla kolumner, knappar med text |
+
+Alla tabeller har `table-responsive` för horisontell scroll vid behov.
+
+### Extra funktionalitet
+
+- **Paginering** — Alla listor (böcker, medlemmar, lån) med valbar sidstorlek (5/10/50/100)
+- **Filtrering** — Sök med ISearchable-interfacet
+- **Sortering** — Titel, författare eller utgivningsår
+- **Låna/returnera från bokdetaljer** — Välj låntagare och låna ut direkt
+- **Förseningsavgift** — Beräknas automatiskt vid retur av försenade lån
+
+### Seed data
+
+Databasen skapas med realistisk testdata:
+- 15 böcker (svenska klassiker)
+- 8 medlemmar
+- 8 lån (2 aktiva i tid, 2 försenade, 4 returnerade)
+
+---
+
+## Del 1 — Konsolapplikation
+
+Konsolapplikationen från Del 1 finns kvar i projektet `Bibliotekssystem/` och demonstrerar:
+- Klasser och inkapsling
+- Komposition (Library → BookCatalog, MemberRegistry, LoanManager)
+- Interface och polymorfism (ISearchable)
+- 132 enhetstester
+
+### Bokhantering (Del 1)
 - Lägg till och ta bort böcker
 - Sök böcker på titel, författare, ISBN eller årtal
 - Sortera böcker efter titel, författare eller utgivningsår
 - Visa tillgängliga böcker
 
-### Medlemshantering
+### Medlemshantering (Del 1)
 - Registrera och ta bort medlemmar
 - Sök medlemmar på namn, ID eller e-post
 - Visa medlemsinformation och lånehistorik

@@ -1,0 +1,234 @@
+﻿@page "/members"
+@inject IMemberRepository MemberRepo
+@inject ILoanRepository LoanRepo
+
+<PageTitle>Medlemmar</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <BackButton />
+        <h1 class="mb-0">👥 Medlemmar</h1>
+    </div>
+    <button class="btn btn-primary" @onclick="() => showAddForm = !showAddForm">
+        @(showAddForm ? "✕ Stäng" : "+ Ny medlem")
+    </button>
+</div>
+
+@if (showAddForm)
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Registrera ny medlem</h5>
+            <EditForm Model="@newMember" OnValidSubmit="HandleAddMember" FormName="AddMemberForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <div class="row g-3">
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label">Medlems-ID</label>
+                        <InputText @bind-Value="newMember.MemberId" class="form-control" />
+                        <ValidationMessage For="@(() => newMember.MemberId)" class="text-danger" />
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label">Namn</label>
+                        <InputText @bind-Value="newMember.Name" class="form-control" />
+                        <ValidationMessage For="@(() => newMember.Name)" class="text-danger" />
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label class="form-label">E-post</label>
+                        <InputText @bind-Value="newMember.Email" class="form-control" />
+                        <ValidationMessage For="@(() => newMember.Email)" class="text-danger" />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success">Registrera</button>
+                    </div>
+                </div>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(addError))
+            {
+                <div class="alert alert-danger mt-2">@addError</div>
+            }
+        </div>
+    </div>
+}
+
+<div class="row mb-3">
+    <div class="col-md-5">
+        <input type="text" class="form-control" placeholder="Sök på namn, ID eller e-post..."
+               @bind="searchTerm" @bind:event="oninput" @bind:after="FilterMembers" />
+    </div>
+    <div class="col-md-3 d-flex align-items-center">
+        <span class="text-muted">@filteredMembers.Count() medlemmar</span>
+    </div>
+    <div class="col-md-3">
+        <div class="input-group">
+            <span class="input-group-text bg-primary text-white">Visa</span>
+            <select class="form-select fw-bold" @bind="pageSize" @bind:after="FilterMembers">
+                <option value="5">5 per sida</option>
+                <option value="10">10 per sida</option>
+                <option value="50">50 per sida</option>
+                <option value="100">100 per sida</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <p><em>Laddar medlemmar...</em></p>
+}
+else if (!filteredMembers.Any())
+{
+    <div class="alert alert-info">Inga medlemmar hittades.</div>
+}
+else
+{
+    <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Medlems-ID</th>
+                <th>Namn</th>
+                <th class="d-none d-lg-table-cell">E-post</th>
+                <th class="d-none d-lg-table-cell">Medlem sedan</th>
+                <th class="text-center">Aktiva lån</th>
+                <th class="text-end">Åtgärder</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var member in pagedMembers)
+            {
+                var activeCount = member.Loans.Count(l => l.ReturnDate == null);
+                <tr>
+                    <td><code>@member.MemberId</code></td>
+                    <td><strong>@member.Name</strong></td>
+                    <td class="d-none d-lg-table-cell">@member.Email</td>
+                    <td class="d-none d-lg-table-cell">@member.MemberSince.ToShortDateString()</td>
+                    <td class="text-center">
+                        @if (activeCount > 0)
+                        {
+                            <span class="badge bg-warning">@activeCount lån</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">0</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteMember(member)"
+                                disabled="@(activeCount > 0)">
+                            🗑️ Ta bort
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav>
+            <ul class="pagination justify-content-center mt-3">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => GoToPage(currentPage - 1)">←</button>
+                </li>
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    var p = i;
+                    <li class="page-item @(p == currentPage ? "active" : "")">
+                        <button class="page-link" @onclick="() => GoToPage(p)">@(p)</button>
+                    </li>
+                }
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => GoToPage(currentPage + 1)">→</button>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-success mt-2">@message</div>
+}
+
+@code {
+    private IEnumerable<Member> allMembers = [];
+    private IEnumerable<Member> filteredMembers = [];
+    private Member newMember = new();
+    private bool isLoading = true;
+    private bool showAddForm = false;
+    private string searchTerm = "";
+    private int pageSize = 5;
+    private int currentPage = 1;
+    private int totalPages => (int)Math.Ceiling((double)filteredMembers.Count() / pageSize);
+    private IEnumerable<Member> pagedMembers => filteredMembers.Skip((currentPage - 1) * pageSize).Take(pageSize);
+    private string? message;
+    private string? addError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMembers();
+    }
+
+    private async Task LoadMembers()
+    {
+        isLoading = true;
+        allMembers = await MemberRepo.GetAllAsync();
+        FilterMembers();
+        isLoading = false;
+    }
+
+    private void FilterMembers()
+    {
+        var result = allMembers.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            result = result.Where(m => m.Matches(searchTerm));
+        }
+
+        filteredMembers = result.OrderBy(m => m.Name);
+        currentPage = 1;
+    }
+
+    private void GoToPage(int p)
+    {
+        if (p >= 1 && p <= totalPages)
+            currentPage = p;
+    }
+
+    private async Task HandleAddMember()
+    {
+        try
+        {
+            addError = null;
+            newMember.MemberSince = DateTime.Now;
+            await MemberRepo.AddAsync(newMember);
+            message = $"Medlemmen '{newMember.Name}' har registrerats!";
+            newMember = new();
+            showAddForm = false;
+            await LoadMembers();
+        }
+        catch (InvalidOperationException ex)
+        {
+            addError = ex.Message;
+        }
+    }
+
+    private async Task DeleteMember(Member member)
+    {
+        try
+        {
+            await MemberRepo.DeleteAsync(member.Id);
+            message = $"Medlemmen '{member.Name}' har tagits bort.";
+            await LoadMembers();
+        }
+        catch (InvalidOperationException ex)
+        {
+            message = ex.Message;
+        }
+    }
+}

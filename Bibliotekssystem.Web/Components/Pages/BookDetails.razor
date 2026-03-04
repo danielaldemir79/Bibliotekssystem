@@ -1,0 +1,190 @@
+﻿@page "/books/{Id:int}"
+@inject IBookRepository BookRepo
+@inject ILoanRepository LoanRepo
+@inject IMemberRepository MemberRepo
+
+<PageTitle>@(book?.Title ?? "Bokdetaljer")</PageTitle>
+
+@if (book == null)
+{
+    <p><em>Laddar bok...</em></p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@book.Title</h1>
+        <BackButton />
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Bokinformation</h5>
+                    <div class="table-responsive">
+                    <table class="table">
+                        <tr><th>ISBN</th><td>@book.ISBN</td></tr>
+                        <tr><th>Titel</th><td>@book.Title</td></tr>
+                        <tr><th>Författare</th><td>@book.Author</td></tr>
+                        <tr><th>Utgivningsår</th><td>@book.PublishedYear</td></tr>
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                <StatusBadge IsAvailable="@book.IsAvailable" />
+                            </td>
+                        </tr>
+                    </table>
+                    </div>
+                </div>
+            </div>
+
+            @if (book.IsAvailable)
+            {
+                <div class="card mt-3 border-success">
+                    <div class="card-body">
+                        <h5 class="card-title">📖 Låna denna bok</h5>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <select class="form-select" @bind="selectedMemberId">
+                                    <option value="0">-- Välj låntagare --</option>
+                                    @foreach (var member in allMembers)
+                                    {
+                                        <option value="@member.Id">@member.Name (@member.MemberId)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-success w-100" @onclick="LoanBook"
+                                        disabled="@(selectedMemberId == 0)">
+                                    📖 Låna ut
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                var activeLoan = bookLoans.FirstOrDefault(l => l.ReturnDate == null);
+                @if (activeLoan != null)
+                {
+                    <div class="card mt-3 border-warning">
+                        <div class="card-body">
+                            <h5 class="card-title">📥 Returnera bok</h5>
+                            <p>Utlånad till <strong>@activeLoan.Member.Name</strong> sedan @activeLoan.LoanDate.ToShortDateString()</p>
+                            <button class="btn btn-warning" @onclick="() => ReturnBook(activeLoan)">
+                                📥 Returnera
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Lånehistorik</h5>
+                    @if (!bookLoans.Any())
+                    {
+                        <p class="text-muted">Inga lån registrerade för denna bok.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Låntagare</th>
+                                    <th>Lånedatum</th>
+                                    <th>Förfallodatum</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var loan in bookLoans)
+                                {
+                                    <tr>
+                                        <td>@loan.Member.Name</td>
+                                        <td>@loan.LoanDate.ToShortDateString()</td>
+                                        <td>@loan.DueDate.ToShortDateString()</td>
+                                        <td>
+                                            <LoanStatusBadge Loan="@loan" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info mt-3">@message</div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Book? book;
+    private IEnumerable<Loan> bookLoans = [];
+    private IEnumerable<Member> allMembers = [];
+    private int selectedMemberId;
+    private string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        book = await BookRepo.GetByIdAsync(Id);
+        if (book != null)
+        {
+            bookLoans = await LoanRepo.GetLoansByBookAsync(book.Id);
+        }
+        allMembers = await MemberRepo.GetAllAsync();
+    }
+
+    private async Task LoanBook()
+    {
+        try
+        {
+            await LoanRepo.CreateLoanAsync(Id, selectedMemberId);
+            message = $"Boken har lånats ut!";
+            selectedMemberId = 0;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+    }
+
+    private async Task ReturnBook(Loan loan)
+    {
+        try
+        {
+            var result = await LoanRepo.ReturnLoanAsync(loan.Id);
+            if (result)
+            {
+                var fee = loan.CalculateLateFee();
+                message = fee > 0
+                    ? $"Boken returnerad. Förseningsavgift: {fee} kr"
+                    : "Boken har returnerats!";
+            }
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+    }
+}

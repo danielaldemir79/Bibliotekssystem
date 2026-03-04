@@ -1,0 +1,85 @@
+﻿@page "/"
+@inject IBookRepository BookRepo		
+@inject IMemberRepository MemberRepo	
+@inject ILoanRepository LoanRepo		
+
+
+
+<PageTitle>Bibliotekssystem</PageTitle>
+
+<h1>📚 Välkommen till Bibliotekssystemet</h1>
+<p class="lead">Hantera böcker, medlemmar och lån i ett modernt webbgränssnitt.</p>
+
+
+@if (isLoading)
+{
+    <p><em>Laddar statistik...</em></p>
+}
+else
+{
+    <div class="row mt-4 g-3">
+        <div class="col-6 col-lg-3">
+            <StatCard Icon="📖" Title="Böcker" Value="@totalBooks" BgColor="bg-primary" LinkUrl="books" LinkText="Visa alla" />
+        </div>
+        <div class="col-6 col-lg-3">
+            <StatCard Icon="✅" Title="Tillgängliga" Value="@availableBooks" BgColor="bg-success" LinkUrl="books" LinkText="Visa böcker" />
+        </div>
+        <div class="col-6 col-lg-3">
+            <StatCard Icon="👥" Title="Medlemmar" Value="@totalMembers" BgColor="bg-info" LinkUrl="members" LinkText="Visa alla" />
+        </div>
+        <div class="col-6 col-lg-3">
+            <StatCard Icon="📋" Title="Aktiva lån" Value="@activeLoans" BgColor="bg-warning" LinkUrl="loans" LinkText="Visa alla" />
+        </div>
+    </div>
+
+	
+    @if (overdueLoans > 0)
+    {
+        <div class="alert alert-danger mt-3">
+            ⚠️ <strong>@overdueLoans försenade lån!</strong> Gå till <a href="loans">lånesidan</a> för att hantera dem.
+        </div>
+    }
+
+    <h3 class="mt-4">📖 Senast tillagda böcker</h3>
+    <div class="row mt-2 g-3">
+        @foreach (var book in latestBooks)
+        {
+            <div class="col-6 col-lg-3">
+                <BookCard Book="@book" />
+            </div>
+        }
+    </div>
+}
+
+
+
+
+@code 
+{
+	private bool isLoading = true;
+	private int totalBooks;
+	private int availableBooks;
+	private int totalMembers;
+	private int activeLoans;
+	private int overdueLoans;
+	private IEnumerable<Book> latestBooks = [];
+
+	protected override async Task OnInitializedAsync()
+	{
+		var books = await BookRepo.GetAllAsync();
+		totalBooks = books.Count();
+		availableBooks = books.Count(b => b.IsAvailable);
+		latestBooks = books.OrderByDescending(b => b.Id).Take(4);
+
+        var members = await MemberRepo.GetAllAsync();
+        totalMembers = members.Count();
+
+        var active = await LoanRepo.GetActiveLoansAsync();
+        activeLoans = active.Count();
+
+        var overdue = await LoanRepo.GetOverdueLoansAsync();
+        overdueLoans = overdue.Count();
+
+        isLoading = false;
+    }
+}

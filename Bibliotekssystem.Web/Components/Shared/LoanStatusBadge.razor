@@ -1,0 +1,17 @@
+@if (Loan.ReturnDate.HasValue)
+{
+    <span class="badge bg-secondary">Returnerad @Loan.ReturnDate.Value.ToShortDateString()</span>
+}
+else if (Loan.DueDate < DateTime.Now)
+{
+    <span class="badge bg-danger">Försenad (@Loan.CalculateLateFee() kr)</span>
+}
+else
+{
+    <span class="badge bg-success">Aktiv</span>
+}
+
+@code {
+    [Parameter]
+    public Loan Loan { get; set; } = default!;
+}
