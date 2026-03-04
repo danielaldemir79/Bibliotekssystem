@@ -1,0 +1,11 @@
+[
+  {
+    "Name": "Bibliotekssystem.Web",
+    "Projects": [
+      {
+        "Path": "Bibliotekssystem.Web\\Bibliotekssystem.Web.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
